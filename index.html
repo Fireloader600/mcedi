@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MinecraftEdi — 经典 Minecraft 复刻版</title>
+    <meta name="description" content="MinecraftEdi，用 Java + LWJGL 从零复刻的经典 Minecraft 早期版本，支持 Mod 与资源包。">
+    <link rel="icon" type="image/png" href="assets/icon.png">
+    <style>
+        :root{
+            --bg:#121212; --bg-alt:#1b1b1b;
+            --panel:#232323; --panel-2:#2c2c2c; --border:#3a3a3a;
+            --green:#7fb238; --green-dk:#5ba33b; --green-lt:#9ed24f;
+            --text:#e6e6e6; --text-dim:#9a9a9a; --accent:#f0c040;
+            --code-bg:#0d0d0d; --code-border:#2a2a2a;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{
+            background:var(--bg);color:var(--text);
+            font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+            line-height:1.6;overflow-x:hidden;
+        }
+        img{image-rendering:pixelated}
+        a{color:inherit;text-decoration:none}
+
+        /* ---------- 导航 ---------- */
+        nav{
+            position:fixed;top:0;left:0;right:0;z-index:100;
+            display:flex;align-items:center;justify-content:space-between;
+            padding:14px 32px;
+            background:rgba(18,18,18,.9);backdrop-filter:blur(8px);
+            border-bottom:2px solid var(--border);
+        }
+        .nav-brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:18px;letter-spacing:1px}
+        .nav-brand img{width:32px;height:32px}
+        .nav-brand span{color:var(--green-lt)}
+        .nav-links{display:flex;gap:24px;flex-wrap:wrap}
+        .nav-links a{font-size:14px;color:var(--text-dim);transition:color .15s}
+        .nav-links a:hover{color:var(--green-lt)}
+        @media(max-width:840px){.nav-links{display:none}}
+
+        /* ---------- Hero ---------- */
+        .hero{
+            min-height:100vh;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;text-align:center;
+            padding:120px 24px 80px;position:relative;
+            background:
+                    radial-gradient(ellipse at 50% 0%,rgba(127,178,56,.18),transparent 60%),
+                    linear-gradient(180deg,#0f1a0a 0%,var(--bg) 70%);
+            overflow:hidden;
+        }
+        .hero::before{
+            content:'';position:absolute;inset:0;pointer-events:none;
+            background-image:
+                    repeating-linear-gradient(0deg,transparent 0 31px,rgba(255,255,255,.02) 31px 32px),
+                    repeating-linear-gradient(90deg,transparent 0 31px,rgba(255,255,255,.02) 31px 32px);
+        }
+        .hero-logo{
+            width:128px;height:128px;margin-bottom:28px;
+            filter:drop-shadow(0 8px 24px rgba(127,178,56,.35));
+            animation:float 4s ease-in-out infinite;
+        }
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+        .hero h1{
+            font-size:clamp(36px,7vw,72px);font-weight:800;letter-spacing:2px;
+            line-height:1.1;margin-bottom:16px;text-shadow:4px 4px 0 rgba(0,0,0,.6);
+        }
+        .hero h1 .accent{color:var(--green-lt)}
+        .hero p.sub{
+            font-size:clamp(14px,2vw,18px);color:var(--text-dim);
+            max-width:680px;margin-bottom:40px;
+        }
+        .hero-buttons{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+        .hero-version{
+            margin-top:22px;font-family:'Consolas','Courier New',monospace;
+            font-size:13px;color:var(--text-dim);letter-spacing:1px;
+        }
+        .hero-version b{color:var(--green-lt)}
+
+        /* ---------- 按钮 ---------- */
+        .btn{
+            display:inline-flex;align-items:center;gap:10px;
+            padding:14px 28px;font-family:inherit;font-size:15px;font-weight:600;
+            letter-spacing:.5px;color:#fff;background:var(--green-dk);border:none;
+            cursor:pointer;
+            box-shadow:
+                    inset -4px -4px 0 rgba(0,0,0,.28),
+                    inset  4px  4px 0 rgba(255,255,255,.22),
+                    0 4px 0 #000;
+            transition:background .12s,transform .05s,box-shadow .05s;
+        }
+        .btn:hover{background:var(--green)}
+        .btn:active{
+            transform:translateY(3px);
+            box-shadow:
+                    inset -4px -4px 0 rgba(0,0,0,.28),
+                    inset  4px  4px 0 rgba(255,255,255,.22),
+                    0 1px 0 #000;
+        }
+        .btn.secondary{
+            background:var(--panel-2);
+            box-shadow:
+                    inset -4px -4px 0 rgba(0,0,0,.28),
+                    inset  4px  4px 0 rgba(255,255,255,.10),
+                    0 4px 0 #000;
+        }
+        .btn.secondary:hover{background:#383838}
+        .btn.small{padding:10px 20px;font-size:13px}
+
+        /* ---------- 通用区块 ---------- */
+        section{padding:96px 24px;max-width:1100px;margin:0 auto}
+        section.full{
+            max-width:none;background:var(--bg-alt);
+            border-top:2px solid var(--border);border-bottom:2px solid var(--border);
+        }
+        section.full > .inner{max-width:1100px;margin:0 auto;padding:0 24px}
+        h2.section-title{
+            font-size:clamp(26px,4vw,38px);font-weight:800;
+            letter-spacing:1px;margin-bottom:12px;
+        }
+        h2.section-title::before{content:'■ ';color:var(--green)}
+        p.section-sub{color:var(--text-dim);margin-bottom:48px;max-width:720px}
+
+        h3.sub-title{
+            font-size:20px;font-weight:700;margin:36px 0 16px;color:var(--green-lt);
+        }
+        h3.sub-title:first-of-type{margin-top:0}
+
+        /* ---------- 下载 ---------- */
+        .version-grid{
+            display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+            gap:20px;
+        }
+        .version-card{
+            background:var(--panel);border:2px solid var(--border);
+            padding:26px;display:flex;flex-direction:column;gap:14px;
+            transition:border-color .15s,transform .15s;
+        }
+        .version-card:hover{border-color:var(--green-dk);transform:translateY(-3px)}
+        .version-card.latest{
+            grid-column:span 2;border-color:var(--green);
+            background:
+                    linear-gradient(180deg,rgba(127,178,56,.10),transparent 60%),
+                    var(--panel);
+        }
+        @media(max-width:720px){.version-card.latest{grid-column:span 1}}
+        .version-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+        .version-tag{
+            font-family:'Consolas','Courier New',monospace;
+            font-size:26px;font-weight:700;color:var(--green-lt);letter-spacing:.5px;
+        }
+        .badge{
+            font-size:11px;font-weight:700;letter-spacing:1px;
+            padding:3px 9px;background:var(--accent);color:#1a1a1a;text-transform:uppercase;
+        }
+        .version-meta{display:flex;gap:18px;font-size:13px;color:var(--text-dim);flex-wrap:wrap}
+        .version-meta span::before{content:'▸ ';color:var(--green-dk)}
+        .version-notes{
+            list-style:none;font-size:14px;color:var(--text-dim);
+            display:flex;flex-direction:column;gap:6px;
+        }
+        .version-notes li::before{content:'· ';color:var(--green);font-weight:bold}
+
+        /* ---------- 特性 ---------- */
+        .features{
+            display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+            gap:22px;
+        }
+        .feature{
+            background:var(--panel);border:2px solid var(--border);
+            padding:26px 22px;transition:border-color .15s;
+        }
+        .feature:hover{border-color:var(--green-dk)}
+        .feature-icon{font-size:34px;margin-bottom:14px;line-height:1}
+        .feature h3{font-size:17px;margin-bottom:8px;color:var(--green-lt)}
+        .feature p{font-size:14px;color:var(--text-dim)}
+
+        /* ---------- 教程 ---------- */
+        .tutorial{
+            background:var(--panel);border:2px solid var(--border);
+            padding:28px;margin-bottom:24px;
+        }
+        .tutorial:last-child{margin-bottom:0}
+        .tutorial h3{
+            font-size:22px;margin-bottom:8px;color:var(--green-lt);
+            display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+        }
+        .tutorial .tag{
+            font-size:11px;font-weight:700;letter-spacing:1px;
+            padding:3px 9px;background:var(--green-dk);color:#fff;text-transform:uppercase;
+        }
+        .tutorial p{font-size:14px;color:var(--text-dim);margin-bottom:14px}
+        .tutorial ol,.tutorial ul{
+            font-size:14px;color:var(--text-dim);
+            margin:12px 0 14px 22px;display:flex;flex-direction:column;gap:6px;
+        }
+        .tutorial li{line-height:1.65}
+        .tutorial li b{color:var(--text)}
+
+        .file-tree{
+            background:var(--code-bg);border:1px solid var(--code-border);
+            padding:14px 18px;margin:14px 0;overflow-x:auto;
+            font-family:'Consolas','Courier New',monospace;
+            font-size:13px;color:#c8c8c8;line-height:1.75;
+            white-space:pre;
+        }
+        .file-tree .d{color:var(--green-lt)}
+        .file-tree .f{color:var(--text)}
+        .file-tree .c{color:#666}
+
+        pre{
+            background:var(--code-bg);border:1px solid var(--code-border);
+            padding:14px 18px;margin:12px 0;overflow-x:auto;
+            font-family:'Consolas','Courier New',monospace;
+            font-size:13px;color:#e0e0e0;line-height:1.7;
+        }
+        pre .kw{color:#c586c0}
+        pre .str{color:#ce9178}
+        pre .cmt{color:#6a9955}
+        pre .num{color:#b5cea8}
+        pre .fn{color:#dcdcaa}
+
+        code{
+            font-family:'Consolas','Courier New',monospace;
+            background:var(--code-bg);border:1px solid var(--code-border);
+            padding:1px 7px;font-size:13px;color:var(--green-lt);
+        }
+
+        /* ---------- 运行步骤 ---------- */
+        .steps{display:flex;flex-direction:column;gap:18px}
+        .step{
+            display:flex;gap:18px;align-items:flex-start;
+            background:var(--panel);border:2px solid var(--border);padding:20px;
+        }
+        .step-num{
+            flex-shrink:0;width:36px;height:36px;
+            display:flex;align-items:center;justify-content:center;
+            background:var(--green-dk);color:#fff;font-weight:700;font-size:16px;
+            box-shadow:inset -3px -3px 0 rgba(0,0,0,.28),inset 3px 3px 0 rgba(255,255,255,.20);
+        }
+        .step h4{font-size:15px;margin-bottom:6px}
+        .step p{font-size:13px;color:var(--text-dim)}
+
+        /* ---------- 操作说明 ---------- */
+        .keys{
+            display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+            gap:14px;
+        }
+        .key-row{
+            display:flex;align-items:center;gap:14px;
+            background:var(--panel);border:2px solid var(--border);padding:14px 18px;
+        }
+        .key-cap{
+            display:inline-flex;align-items:center;justify-content:center;
+            min-width:44px;padding:5px 10px;
+            background:var(--panel-2);border:1px solid var(--border);
+            font-family:'Consolas','Courier New',monospace;font-size:12px;
+            color:#fff;font-weight:700;letter-spacing:.5px;
+            box-shadow:inset -2px -2px 0 rgba(0,0,0,.30),inset 2px 2px 0 rgba(255,255,255,.10);
+        }
+        .key-row span{font-size:13px;color:var(--text-dim)}
+
+        /* ---------- 页脚 ---------- */
+        footer{
+            background:#0d0d0d;border-top:2px solid var(--border);
+            padding:36px 24px;text-align:center;
+            font-size:13px;color:var(--text-dim);
+        }
+        footer .foot-brand{
+            display:inline-flex;align-items:center;gap:10px;
+            font-weight:700;color:var(--text);margin-bottom:10px;
+        }
+        footer .foot-brand img{width:24px;height:24px}
+        footer .foot-brand span{color:var(--green-lt)}
+        footer p{margin-top:6px;font-size:12px;color:#666}
+    </style>
+</head>
+<body>
+
+<!-- ========== 导航 ========== -->
+<nav>
+    <a class="nav-brand" href="#top">
+        <img src="assets/icon.png" alt="MinecraftEdi">
+        Minecraft<span>Edi</span>
+    </a>
+    <div class="nav-links">
+        <a href="#download">下载</a>
+        <a href="#features">特性</a>
+        <a href="#mods">Mod 教程</a>
+        <a href="#packs">资源包教程</a>
+        <a href="#howto">运行</a>
+        <a href="#controls">操作</a>
+    </div>
+</nav>
+
+<!-- ========== Hero ========== -->
+<header class="hero" id="top">
+    <img class="hero-logo" src="assets/icon.png" alt="MinecraftEdi 图标">
+    <h1>Minecraft<span class="accent">Edi</span></h1>
+    <p class="sub">
+        用 Java + LWJGL 从零复刻的经典 Minecraft 早期版本。<br>
+        超平坦世界、草方块、石头、自由挖掘与放置。<br>
+        <b style="color:var(--green-lt)">0.19 新增：EdiPack Mod 加载器 · 资源包系统 · 快捷栏</b>
+    </p>
+    <div class="hero-buttons">
+        <a class="btn" href="downloads/MinecraftEdi-0.19.jar" download>
+            ⬇ 下载 0.19 版
+        </a>
+        <a class="btn secondary" href="#mods">制作 Mod</a>
+    </div>
+    <div class="hero-version">当前最新版本 <b>0.19</b> · 需要 Java 17+</div>
+</header>
+
+<!-- ========== 下载 ========== -->
+<section id="download">
+    <h2 class="section-title">下载</h2>
+    <p class="section-sub">选择一个版本下载 jar 包，双击或命令行运行即可。</p>
+
+    <div class="version-grid">
+        <div class="version-card latest">
+            <div class="version-head">
+                <span class="version-tag">0.19</span>
+                <span class="badge">最新</span>
+            </div>
+            <div class="version-meta">
+                <span>128 × 64 × 128 世界</span>
+                <span>Java 17+</span>
+                <span>EdiPack Mod 加载器</span>
+            </div>
+            <ul class="version-notes">
+                <li>新增 <b>EdiPack</b> Mod 加载器，启动自动创建 <code>mods/</code></li>
+                <li>新增资源包系统，启动自动创建 <code>resourcepacks/</code></li>
+                <li>方块放置不再受 y 轴限制，任意高度都能放</li>
+                <li>快捷栏：<code>1</code> = 草方块，<code>2</code> = 石头</li>
+                <li>方块注册表 <code>BlockRegistry</code>，Mod 可注册新方块</li>
+                <li>准星对准方块显示黑色线框高亮</li>
+            </ul>
+            <a class="btn" href="downloads/MinecraftEdi-0.19.jar" download>
+                ⬇ 下载 MinecraftEdi-0.19.jar
+            </a>
+        </div>
+
+        <div class="version-card">
+            <div class="version-head">
+                <span class="version-tag">0.18</span>
+            </div>
+            <div class="version-meta">
+                <span>128 × 64 × 128 世界</span>
+                <span>Java 17+</span>
+            </div>
+            <ul class="version-notes">
+                <li>超平坦地形：62 层石头 + 1 层草方块</li>
+                <li>自由挖掘与放置（放置上限 y = 128）</li>
+                <li>方块高亮线框</li>
+                <li>区块显示列表渲染 + 视锥剔除</li>
+            </ul>
+            <a class="btn secondary small" href="downloads/MinecraftEdi-0.18.jar" download>
+                ⬇ 下载 0.18
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 特性 ========== -->
+<section class="full" id="features">
+    <div class="inner">
+        <h2 class="section-title">特性</h2>
+        <p class="section-sub">还原经典 Minecraft 的核心体验，并加入 Mod 与资源包支持。</p>
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🟩</div>
+                <h3>方块世界</h3>
+                <p>草方块与石头两种内置方块，超平坦世界一片开阔。</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⛏️</div>
+                <h3>挖掘与放置</h3>
+                <p>左键破坏、右键放置，射线精确命中准星指向的方块。</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎯</div>
+                <h3>方块高亮</h3>
+                <p>准星对准方块时显示黑色线框，跟原版一样。</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🏃</div>
+                <h3>物理运动</h3>
+                <p>重力、跳跃、碰撞盒，脚踏实地的第一人称体验。</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🧩</div>
+                <h3>EdiPack Mod</h3>
+                <p>把 mod jar 丢进 <code>mods/</code> 就能加载，注册任意新方块。</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🖼️</div>
+                <h3>资源包</h3>
+                <p>覆盖方块贴图，格式类似原版资源包，只需 <code>package.edimeta</code>。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== Mod 教程 ========== -->
+<section id="mods">
+    <h2 class="section-title">Mod 制作教程</h2>
+    <p class="section-sub">
+        用 EdiPack 制作第一个 MinecraftEdi Mod。整个过程不需要联网，依赖全部放在本地
+        <code>gradle/lib/</code> 目录。
+    </p>
+
+    <div class="tutorial">
+        <h3>准备项目结构 <span class="tag">Step 1</span></h3>
+        <p>新建一个文件夹（例如 <code>MyFirstMod</code>），按下面的结构放文件：</p>
+        <div class="file-tree">MyFirstMod/
+            ├── <span class="f">settings.gradle</span>
+            ├── <span class="f">gradle.properties</span>
+            ├── <span class="f">build.gradle</span>
+            ├── <span class="d">gradle/</span>
+            │   └── <span class="d">lib/</span>
+            │       └── <span class="f">MinecraftEdi-0.19.jar</span>   <span class="c">← 手动放入</span>
+            └── <span class="d">src/main/</span>
+            ├── <span class="d">java/com/example/</span>
+            │   └── <span class="f">ModBlock.java</span>
+            └── <span class="d">resources/</span>
+            ├── <span class="f">edimod.json</span>
+            └── <span class="d">assets/myfirstmod/textures/block/</span>
+            └── <span class="f">ruby.png</span></div>
+        <p>
+            把游戏项目打包出来的 <code>MinecraftEdi-0.19.jar</code> 放进
+            <code>gradle/lib/</code>，Mod 编译时就能引用到 <code>EdiMod</code> 接口和
+            <code>BlockRegistry</code> 类。
+        </p>
+    </div>
+
+    <div class="tutorial">
+        <h3>编写 Gradle 文件 <span class="tag">Step 2</span></h3>
+
+        <h3 class="sub-title">settings.gradle</h3>
+        <pre>rootProject.name = <span class="str">'MyFirstMod'</span></pre>
+
+        <h3 class="sub-title">gradle.properties</h3>
+        <p>这里填写 Mod 的名字、版本和主类，会替换到 <code>edimod.json</code> 里。</p>
+        <pre>modName=MyFirstMod
+modVersion=1.0.0
+mainClass=com.example.ModBlock</pre>
+
+        <h3 class="sub-title">build.gradle</h3>
+        <pre>plugins {
+    id <span class="str">'java'</span>
+}
+
+def modName    = project.property(<span class="str">'modName'</span>)
+def modVersion = project.property(<span class="str">'modVersion'</span>)
+def mainClass  = project.property(<span class="str">'mainClass'</span>)
+
+repositories {
+    <span class="cmt">// 不联网，只从 gradle/lib 拿依赖</span>
+}
+
+dependencies {
+    implementation fileTree(dir: <span class="str">'gradle/lib'</span>, include: [<span class="str">'*.jar'</span>])
+}
+
+processResources {
+    def modNameVal    = modName
+    def modVersionVal = modVersion
+    def mainClassVal  = mainClass
+    inputs.property <span class="str">'modName'</span>,    modNameVal
+    inputs.property <span class="str">'modVersion'</span>, modVersionVal
+    inputs.property <span class="str">'mainClass'</span>,  mainClassVal
+    filesMatching(<span class="str">'edimod.json'</span>) {
+        expand(
+            modName:    modNameVal,
+            modVersion: modVersionVal,
+            mainClass:  mainClassVal
+        )
+    }
+}
+
+jar {
+    archiveBaseName = modName
+    archiveVersion  = modVersion
+}</pre>
+    </div>
+
+    <div class="tutorial">
+        <h3>编写方块类 <span class="tag">Step 3</span></h3>
+        <p>
+            <code>src/main/java/com/example/ModBlock.java</code>。这个类实现
+            <code>EdiMod</code> 接口，游戏启动时会被 EdiPack 调用。
+        </p>
+        <pre><span class="kw">package</span> com.example;
+
+<span class="kw">import</span> com.fire.block.BlockRegistry;
+<span class="kw">import</span> com.fire.mod.EdiMod;
+
+<span class="kw">public class</span> <span class="fn">ModBlock</span> <span class="kw">implements</span> EdiMod {
+
+    <span class="cmt">@Override</span>
+    <span class="kw">public void</span> <span class="fn">onInit</span>(BlockRegistry registry) {
+        <span class="cmt">// 注册一个名为 ruby 的方块，纹理来自本 mod jar 内：</span>
+        <span class="cmt">//   assets/myfirstmod/textures/block/ruby.png</span>
+        <span class="kw">int</span> id = BlockRegistry.<span class="fn">register</span>(
+                <span class="str">"ruby"</span>,
+                <span class="str">"/assets/myfirstmod/textures/block/ruby.png"</span>
+        );
+        System.out.<span class="fn">println</span>(<span class="str">"[MyFirstMod] ruby 方块已注册, id = "</span> + id);
+    }
+}</pre>
+    </div>
+
+    <div class="tutorial">
+        <h3>编写 edimod.json <span class="tag">Step 4</span></h3>
+        <p>
+            <code>src/main/resources/edimod.json</code>。这是 Mod 的元数据文件，
+            里面的 <code>${...}</code> 会被 Gradle 用 <code>gradle.properties</code> 里的值替换。
+        </p>
+        <pre>{
+    <span class="str">"name"</span>:    <span class="str">"${modName}"</span>,
+    <span class="str">"version"</span>: <span class="str">"${modVersion}"</span>,
+    <span class="str">"main"</span>:    <span class="str">"${mainClass}"</span>
+}</pre>
+        <p>
+            把 <code>ruby.png</code> 放到
+            <code>src/main/resources/assets/myfirstmod/textures/block/ruby.png</code>，
+            建议使用 16×16 的 PNG。
+        </p>
+    </div>
+
+    <div class="tutorial">
+        <h3>编译与安装 <span class="tag">Step 5</span></h3>
+        <p>在 <code>MyFirstMod/</code> 目录下执行：</p>
+        <pre>gradlew build</pre>
+        <p>
+            构建产物在 <code>build/libs/MyFirstMod-1.0.0.jar</code>。把它复制到
+            MinecraftEdi 运行目录下的 <code>mods/</code> 文件夹（首次运行游戏会自动创建），
+            重新启动游戏即可。
+        </p>
+        <p>启动后控制台会看到：</p>
+        <pre>[EdiPack] 已创建 mods/ 文件夹
+[EdiPack] 注册方块: ruby (id=3)
+[EdiPack] 已加载: MyFirstMod v1.0.0 (MyFirstMod-1.0.0.jar)</pre>
+    </div>
+</section>
+
+<!-- ========== 资源包教程 ========== -->
+<section class="full" id="packs">
+    <div class="inner">
+        <h2 class="section-title">资源包教程</h2>
+        <p class="section-sub">
+            资源包格式与原版 Minecraft 资源包相似，区别是 <code>pack.mcmeta</code> 改名为
+            <code>package.edimeta</code>。资源包用来覆盖内置方块的贴图。
+        </p>
+
+        <div class="tutorial">
+            <h3>准备目录结构 <span class="tag">Step 1</span></h3>
+            <p>
+                在 MinecraftEdi 运行目录下的 <code>resourcepacks/</code> 里新建一个文件夹，
+                名字随意（例如 <code>BlueGrass</code>），结构如下：
+            </p>
+            <div class="file-tree">resourcepacks/
+                └── <span class="d">BlueGrass/</span>
+                ├── <span class="f">package.edimeta</span>
+                └── <span class="d">assets/</span>
+                └── <span class="d">minecraft/</span>
+                └── <span class="d">textures/</span>
+                └── <span class="d">block/</span>
+                ├── <span class="f">grass.png</span>   <span class="c">← 覆盖草方块</span>
+                └── <span class="f">stone.png</span>   <span class="c">← 覆盖石头</span></div>
+            <p>
+                首次启动游戏会自动创建 <code>resourcepacks/</code> 文件夹。
+                只有包含 <code>package.edimeta</code> 的文件夹才会被识别。
+            </p>
+        </div>
+
+        <div class="tutorial">
+            <h3>编写 package.edimeta <span class="tag">Step 2</span></h3>
+            <p>
+                文件结构与原版 <code>pack.mcmeta</code> 完全一样，只是文件名改了。
+            </p>
+            <pre>{
+    <span class="str">"pack"</span>: {
+        <span class="str">"pack_format"</span>: <span class="num">1</span>,
+        <span class="str">"description"</span>: <span class="str">"我的资源包 - 把草方块改成蓝的"</span>
+    }
+}</pre>
+        </div>
+
+        <div class="tutorial">
+            <h3>替换贴图 <span class="tag">Step 3</span></h3>
+            <p>
+                把你想要替换的 PNG 放到 <code>assets/minecraft/textures/block/</code>，
+                文件名与内置方块保持一致即可覆盖。例如：
+            </p>
+            <ul>
+                <li><b>grass.png</b> — 覆盖草方块</li>
+                <li><b>stone.png</b> — 覆盖石头</li>
+            </ul>
+            <p>
+                尺寸建议 16×16，风格不限。启动游戏后控制台会打印：
+            </p>
+            <pre>[EdiPack] 资源包: BlueGrass - 我的资源包 - 把草方块改成蓝的</pre>
+        </div>
+
+        <div class="tutorial">
+            <h3>Mod 方块的贴图也能被覆盖 <span class="tag">进阶</span></h3>
+            <p>
+                Mod 方块的贴图路径由 Mod 作者决定。如果 Mod 使用了
+                <code>/assets/myfirstmod/textures/block/ruby.png</code>，那么资源包只需提供：
+            </p>
+            <div class="file-tree">resourcepacks/
+                └── <span class="d">MyPack/</span>
+                ├── <span class="f">package.edimeta</span>
+                └── <span class="d">assets/myfirstmod/textures/block/</span>
+                └── <span class="f">ruby.png</span></div>
+            <p>
+                路径与 Mod 内部声明的路径一致，就会覆盖 Mod 自带贴图。
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 运行步骤 ========== -->
+<section id="howto">
+    <h2 class="section-title">如何运行</h2>
+    <p class="section-sub">从下载到进入游戏只需要三步。</p>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div>
+                <h4>安装 Java 17 或更高版本</h4>
+                <p>前往 <code>adoptium.net</code> 下载适合你系统的 JDK，安装后确认终端里能执行：</p>
+                <pre>java -version</pre>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div>
+                <h4>下载 MinecraftEdi-0.19.jar</h4>
+                <p>点击上方的下载按钮，把 jar 保存到任意目录。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div>
+                <h4>运行</h4>
+                <p>双击 jar 即可启动；如果双击无效，在 jar 所在目录打开终端：</p>
+                <pre>java -jar MinecraftEdi-0.19.jar</pre>
+                <p>首次运行会在当前目录创建 <code>mods/</code> 和 <code>resourcepacks/</code> 两个文件夹。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 操作说明 ========== -->
+<section class="full" id="controls">
+    <div class="inner">
+        <h2 class="section-title">操作</h2>
+        <p class="section-sub">标准第一人称操作。</p>
+        <div class="keys">
+            <div class="key-row"><span class="key-cap">W A S D</span><span>前后左右移动</span></div>
+            <div class="key-row"><span class="key-cap">鼠标</span><span>转动视角</span></div>
+            <div class="key-row"><span class="key-cap">空格</span><span>跳跃</span></div>
+            <div class="key-row"><span class="key-cap">左键</span><span>破坏方块</span></div>
+            <div class="key-row"><span class="key-cap">右键</span><span>放置方块</span></div>
+            <div class="key-row"><span class="key-cap">1</span><span>切换到草方块</span></div>
+            <div class="key-row"><span class="key-cap">2</span><span>切换到石头</span></div>
+            <div class="key-row"><span class="key-cap">ESC</span><span>关闭窗口</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== 页脚 ========== -->
+<footer>
+    <div class="foot-brand">
+        <img src="assets/icon.png" alt="">
+        Minecraft<span>Edi</span>
+    </div>
+    <div>版本 0.19 · Java + LWJGL · 开源复刻项目</div>
+    <p>MinecraftEdi 与 Mojang / Microsoft 无关，仅供学习交流使用。</p>
+</footer>
+
+</body>
+</html>
