@@ -25,7 +25,7 @@ public class ResourcePackLoader {
         List<Pack> packs = new ArrayList<>();
         File dir = new File("resourcepacks");
         if (!dir.exists()) {
-            if (dir.mkdirs()) System.out.println("[EdiPack] 已创建 resourcepacks/ 文件夹");
+            dir.mkdirs();
             return packs;
         }
 
@@ -45,9 +45,9 @@ public class ResourcePackLoader {
 
                 Pack p = new Pack(item, desc != null ? desc : item.getName(), format);
                 packs.add(p);
-                System.out.println("[EdiPack] 资源包: " + item.getName() + " - " + p.name);
+                //System.out.println("[EdiPack] 资源包: " + item.getName() + " - " + p.name);
             } catch (Exception e) {
-                System.err.println("[EdiPack] 资源包读取失败: " + item.getName() + " → " + e.getMessage());
+                //System.err.println("[EdiPack] 资源包读取失败: " + item.getName() + " → " + e.getMessage());
             }
         }
         return packs;

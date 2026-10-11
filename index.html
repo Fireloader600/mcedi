@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MinecraftEdi — 经典 Minecraft 复刻版</title>
-    <meta name="description" content="MinecraftEdi，用 Java + LWJGL 从零复刻的经典 Minecraft 早期版本，支持 Mod 与资源包。">
+    <meta name="description" content="MinecraftEdi，用 Java + LWJGL 从零复刻的经典 Minecraft 早期版本，支持生存 / 创造模式、Mod 与资源包。">
     <link rel="icon" type="image/png" href="assets/icon.png">
     <style>
         :root{
@@ -24,7 +24,6 @@
         img{image-rendering:pixelated}
         a{color:inherit;text-decoration:none}
 
-        /* ---------- 导航 ---------- */
         nav{
             position:fixed;top:0;left:0;right:0;z-index:100;
             display:flex;align-items:center;justify-content:space-between;
@@ -40,7 +39,6 @@
         .nav-links a:hover{color:var(--green-lt)}
         @media(max-width:840px){.nav-links{display:none}}
 
-        /* ---------- Hero ---------- */
         .hero{
             min-height:100vh;display:flex;flex-direction:column;
             align-items:center;justify-content:center;text-align:center;
@@ -78,7 +76,6 @@
         }
         .hero-version b{color:var(--green-lt)}
 
-        /* ---------- 按钮 ---------- */
         .btn{
             display:inline-flex;align-items:center;gap:10px;
             padding:14px 28px;font-family:inherit;font-size:15px;font-weight:600;
@@ -108,7 +105,6 @@
         .btn.secondary:hover{background:#383838}
         .btn.small{padding:10px 20px;font-size:13px}
 
-        /* ---------- 通用区块 ---------- */
         section{padding:96px 24px;max-width:1100px;margin:0 auto}
         section.full{
             max-width:none;background:var(--bg-alt);
@@ -127,7 +123,6 @@
         }
         h3.sub-title:first-of-type{margin-top:0}
 
-        /* ---------- 下载 ---------- */
         .version-grid{
             display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
             gap:20px;
@@ -144,7 +139,16 @@
                     linear-gradient(180deg,rgba(127,178,56,.10),transparent 60%),
                     var(--panel);
         }
-        @media(max-width:720px){.version-card.latest{grid-column:span 1}}
+        .version-card.mdk{
+            grid-column:span 2;border-color:var(--accent);
+            background:
+                    linear-gradient(180deg,rgba(240,192,64,.10),transparent 60%),
+                    var(--panel);
+        }
+        @media(max-width:720px){
+            .version-card.latest{grid-column:span 1}
+            .version-card.mdk{grid-column:span 1}
+        }
         .version-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
         .version-tag{
             font-family:'Consolas','Courier New',monospace;
@@ -154,6 +158,7 @@
             font-size:11px;font-weight:700;letter-spacing:1px;
             padding:3px 9px;background:var(--accent);color:#1a1a1a;text-transform:uppercase;
         }
+        .badge.muted{background:var(--panel-2);color:var(--text-dim)}
         .version-meta{display:flex;gap:18px;font-size:13px;color:var(--text-dim);flex-wrap:wrap}
         .version-meta span::before{content:'▸ ';color:var(--green-dk)}
         .version-notes{
@@ -162,7 +167,6 @@
         }
         .version-notes li::before{content:'· ';color:var(--green);font-weight:bold}
 
-        /* ---------- 特性 ---------- */
         .features{
             display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
             gap:22px;
@@ -176,7 +180,6 @@
         .feature h3{font-size:17px;margin-bottom:8px;color:var(--green-lt)}
         .feature p{font-size:14px;color:var(--text-dim)}
 
-        /* ---------- 教程 ---------- */
         .tutorial{
             background:var(--panel);border:2px solid var(--border);
             padding:28px;margin-bottom:24px;
@@ -227,7 +230,6 @@
             padding:1px 7px;font-size:13px;color:var(--green-lt);
         }
 
-        /* ---------- 运行步骤 ---------- */
         .steps{display:flex;flex-direction:column;gap:18px}
         .step{
             display:flex;gap:18px;align-items:flex-start;
@@ -242,7 +244,6 @@
         .step h4{font-size:15px;margin-bottom:6px}
         .step p{font-size:13px;color:var(--text-dim)}
 
-        /* ---------- 操作说明 ---------- */
         .keys{
             display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
             gap:14px;
@@ -261,7 +262,6 @@
         }
         .key-row span{font-size:13px;color:var(--text-dim)}
 
-        /* ---------- 页脚 ---------- */
         footer{
             background:#0d0d0d;border-top:2px solid var(--border);
             padding:36px 24px;text-align:center;
@@ -278,7 +278,6 @@
 </head>
 <body>
 
-<!-- ========== 导航 ========== -->
 <nav>
     <a class="nav-brand" href="#top">
         <img src="assets/icon.png" alt="MinecraftEdi">
@@ -294,75 +293,111 @@
     </div>
 </nav>
 
-<!-- ========== Hero ========== -->
 <header class="hero" id="top">
     <img class="hero-logo" src="assets/icon.png" alt="MinecraftEdi 图标">
     <h1>Minecraft<span class="accent">Edi</span></h1>
     <p class="sub">
         用 Java + LWJGL 从零复刻的经典 Minecraft 早期版本。<br>
-        超平坦世界、草方块、石头、自由挖掘与放置。<br>
-        <b style="color:var(--green-lt)">0.19 新增：EdiPack Mod 加载器 · 资源包系统 · 快捷栏</b>
+        超平坦 / 无限世界、多种方块、生存与创造模式、自由挖掘与放置。<br>
+        <b style="color:var(--green-lt)">0.21 新增：生存模式 · 矿石 · 沙漠群系 · 结构文件 · 9 格快捷栏</b>
     </p>
     <div class="hero-buttons">
-        <a class="btn" href="downloads/MinecraftEdi-0.19.jar" download>
-            ⬇ 下载 0.19 版
+        <a class="btn" href="downloads/MinecraftEdi-0.21.jar" download>
+            ⬇ 下载 0.21 版
         </a>
-        <a class="btn secondary" href="#mods">制作 Mod</a>
+        <a class="btn secondary" href="downloads/MinecraftEdi-MDK.zip" download>
+            ⬇ 下载 MDK
+        </a>
     </div>
-    <div class="hero-version">当前最新版本 <b>0.19</b> · 需要 Java 17+</div>
+    <div class="hero-version">当前最新版本 <b>0.21</b> · 需要 Java 17+</div>
 </header>
 
-<!-- ========== 下载 ========== -->
 <section id="download">
     <h2 class="section-title">下载</h2>
-    <p class="section-sub">选择一个版本下载 jar 包，双击或命令行运行即可。</p>
+    <p class="section-sub">下载游戏 jar 直接运行，或下载 MDK 开始制作 Mod。</p>
 
     <div class="version-grid">
         <div class="version-card latest">
             <div class="version-head">
-                <span class="version-tag">0.19</span>
+                <span class="version-tag">0.21</span>
                 <span class="badge">最新</span>
             </div>
             <div class="version-meta">
                 <span>128 × 64 × 128 世界</span>
                 <span>Java 17+</span>
-                <span>EdiPack Mod 加载器</span>
+                <span>生存 · 创造</span>
             </div>
             <ul class="version-notes">
-                <li>新增 <b>EdiPack</b> Mod 加载器，启动自动创建 <code>mods/</code></li>
-                <li>新增资源包系统，启动自动创建 <code>resourcepacks/</code></li>
-                <li>方块放置不再受 y 轴限制，任意高度都能放</li>
-                <li>快捷栏：<code>1</code> = 草方块，<code>2</code> = 石头</li>
-                <li>方块注册表 <code>BlockRegistry</code>，Mod 可注册新方块</li>
-                <li>准星对准方块显示黑色线框高亮</li>
+                <li><b>生存模式</b>：撸树、挖矿、掉落物进背包</li>
+                <li>新增方块：圆石、煤矿、铁矿、金矿、钻石矿、沙子</li>
+                <li>草方块多面纹理：顶部草、侧面渐变、底部泥土</li>
+                <li>9 格快捷栏 + 27 格背包，按 <code>E</code> 打开物品栏</li>
+                <li>新增沙漠群系，结构文件改用 JSON 定义</li>
+                <li>新音效：泥土 <code>dirt.ogg</code>，树叶用 <code>grass.ogg</code></li>
             </ul>
-            <a class="btn" href="downloads/MinecraftEdi-0.19.jar" download>
-                ⬇ 下载 MinecraftEdi-0.19.jar
+            <a class="btn" href="downloads/MinecraftEdi-0.21.jar" download>
+                ⬇ 下载 MinecraftEdi-0.21.jar
+            </a>
+        </div>
+
+        <div class="version-card mdk">
+            <div class="version-head">
+                <span class="version-tag">MDK</span>
+                <span class="badge">Mod 开发套件</span>
+            </div>
+            <div class="version-meta">
+                <span>基于 0.21</span>
+                <span>Gradle 工程模板</span>
+            </div>
+            <ul class="version-notes">
+                <li>内置 <code>gradle/lib/MinecraftEdi-0.21.jar</code>，无需联网拉依赖</li>
+                <li>示例方块类 <code>com.example.ModBlock</code></li>
+                <li><code>edimod.json</code> 元数据，含名称 / 版本 / 主类</li>
+                <li>编译后把 jar 丢进游戏的 <code>mods/</code> 就能加载</li>
+            </ul>
+            <a class="btn" href="downloads/MinecraftEdi-MDK.zip" download>
+                ⬇ 下载 MinecraftEdi-MDK.zip
             </a>
         </div>
 
         <div class="version-card">
             <div class="version-head">
-                <span class="version-tag">0.18</span>
+                <span class="version-tag">0.20</span>
+                <span class="badge muted">旧版</span>
             </div>
             <div class="version-meta">
                 <span>128 × 64 × 128 世界</span>
                 <span>Java 17+</span>
             </div>
             <ul class="version-notes">
-                <li>超平坦地形：62 层石头 + 1 层草方块</li>
-                <li>自由挖掘与放置（放置上限 y = 128）</li>
-                <li>方块高亮线框</li>
-                <li>区块显示列表渲染 + 视锥剔除</li>
+                <li>开始菜单 + 存档 + 无限地形</li>
+                <li>EdiPack Mod 加载器 + 资源包</li>
             </ul>
-            <a class="btn secondary small" href="downloads/MinecraftEdi-0.18.jar" download>
-                ⬇ 下载 0.18
+            <a class="btn secondary small" href="downloads/MinecraftEdi-0.20.jar" download>
+                ⬇ 下载 0.20
+            </a>
+        </div>
+
+        <div class="version-card">
+            <div class="version-head">
+                <span class="version-tag">0.19</span>
+                <span class="badge muted">旧版</span>
+            </div>
+            <div class="version-meta">
+                <span>128 × 64 × 128 世界</span>
+                <span>Java 17+</span>
+            </div>
+            <ul class="version-notes">
+                <li>EdiPack Mod 加载器</li>
+                <li>资源包系统</li>
+            </ul>
+            <a class="btn secondary small" href="downloads/MinecraftEdi-0.19.jar" download>
+                ⬇ 下载 0.19
             </a>
         </div>
     </div>
 </section>
 
-<!-- ========== 特性 ========== -->
 <section class="full" id="features">
     <div class="inner">
         <h2 class="section-title">特性</h2>
@@ -370,23 +405,23 @@
         <div class="features">
             <div class="feature">
                 <div class="feature-icon">🟩</div>
-                <h3>方块世界</h3>
-                <p>草方块与石头两种内置方块，超平坦世界一片开阔。</p>
+                <h3>多种方块</h3>
+                <p>草、石头、泥土、木板、原木、树叶、圆石、煤矿、铁矿、金矿、钻石矿、沙子。</p>
             </div>
             <div class="feature">
                 <div class="feature-icon">⛏️</div>
-                <h3>挖掘与放置</h3>
-                <p>左键破坏、右键放置，射线精确命中准星指向的方块。</p>
+                <h3>生存模式</h3>
+                <p>撸树挖矿，掉落物进背包，9 格快捷栏 + 27 格背包，想致富先撸树。</p>
             </div>
             <div class="feature">
-                <div class="feature-icon">🎯</div>
-                <h3>方块高亮</h3>
-                <p>准星对准方块时显示黑色线框，跟原版一样。</p>
+                <div class="feature-icon">🌍</div>
+                <h3>超平坦 / 无限</h3>
+                <p>平原、森林、沙漠群系，结构文件用 JSON 定义，随机生成树木。</p>
             </div>
             <div class="feature">
-                <div class="feature-icon">🏃</div>
-                <h3>物理运动</h3>
-                <p>重力、跳跃、碰撞盒，脚踏实地的第一人称体验。</p>
+                <div class="feature-icon">💾</div>
+                <h3>存档系统</h3>
+                <p>存档保存在 <code>saves/</code>，记住游戏模式、世界类型、玩家位置。</p>
             </div>
             <div class="feature">
                 <div class="feature-icon">🧩</div>
@@ -402,12 +437,11 @@
     </div>
 </section>
 
-<!-- ========== Mod 教程 ========== -->
 <section id="mods">
     <h2 class="section-title">Mod 制作教程</h2>
     <p class="section-sub">
         用 EdiPack 制作第一个 MinecraftEdi Mod。整个过程不需要联网，依赖全部放在本地
-        <code>gradle/lib/</code> 目录。
+        <code>gradle/lib/</code> 目录。可以直接下载上方的 MDK 作为模板。
     </p>
 
     <div class="tutorial">
@@ -419,7 +453,7 @@
             ├── <span class="f">build.gradle</span>
             ├── <span class="d">gradle/</span>
             │   └── <span class="d">lib/</span>
-            │       └── <span class="f">MinecraftEdi-0.19.jar</span>   <span class="c">← 手动放入</span>
+            │       └── <span class="f">MinecraftEdi-0.21.jar</span>   <span class="c">← 手动放入</span>
             └── <span class="d">src/main/</span>
             ├── <span class="d">java/com/example/</span>
             │   └── <span class="f">ModBlock.java</span>
@@ -428,7 +462,7 @@
             └── <span class="d">assets/myfirstmod/textures/block/</span>
             └── <span class="f">ruby.png</span></div>
         <p>
-            把游戏项目打包出来的 <code>MinecraftEdi-0.19.jar</code> 放进
+            把游戏项目打包出来的 <code>MinecraftEdi-0.21.jar</code> 放进
             <code>gradle/lib/</code>，Mod 编译时就能引用到 <code>EdiMod</code> 接口和
             <code>BlockRegistry</code> 类。
         </p>
@@ -502,11 +536,10 @@ jar {
     <span class="kw">public void</span> <span class="fn">onInit</span>(BlockRegistry registry) {
         <span class="cmt">// 注册一个名为 ruby 的方块，纹理来自本 mod jar 内：</span>
         <span class="cmt">//   assets/myfirstmod/textures/block/ruby.png</span>
-        <span class="kw">int</span> id = BlockRegistry.<span class="fn">register</span>(
+        BlockRegistry.<span class="fn">register</span>(
                 <span class="str">"ruby"</span>,
                 <span class="str">"/assets/myfirstmod/textures/block/ruby.png"</span>
         );
-        System.out.<span class="fn">println</span>(<span class="str">"[MyFirstMod] ruby 方块已注册, id = "</span> + id);
     }
 }</pre>
     </div>
@@ -538,14 +571,9 @@ jar {
             MinecraftEdi 运行目录下的 <code>mods/</code> 文件夹（首次运行游戏会自动创建），
             重新启动游戏即可。
         </p>
-        <p>启动后控制台会看到：</p>
-        <pre>[EdiPack] 已创建 mods/ 文件夹
-[EdiPack] 注册方块: ruby (id=3)
-[EdiPack] 已加载: MyFirstMod v1.0.0 (MyFirstMod-1.0.0.jar)</pre>
     </div>
 </section>
 
-<!-- ========== 资源包教程 ========== -->
 <section class="full" id="packs">
     <div class="inner">
         <h2 class="section-title">资源包教程</h2>
@@ -567,8 +595,10 @@ jar {
                 └── <span class="d">minecraft/</span>
                 └── <span class="d">textures/</span>
                 └── <span class="d">block/</span>
-                ├── <span class="f">grass.png</span>   <span class="c">← 覆盖草方块</span>
-                └── <span class="f">stone.png</span>   <span class="c">← 覆盖石头</span></div>
+                ├── <span class="f">grass.png</span>          <span class="c">← 顶面</span>
+                ├── <span class="f">grass_gradient.png</span> <span class="c">← 侧面</span>
+                ├── <span class="f">stone.png</span>
+                └── <span class="f">sand.png</span></div>
             <p>
                 首次启动游戏会自动创建 <code>resourcepacks/</code> 文件夹。
                 只有包含 <code>package.edimeta</code> 的文件夹才会被识别。
@@ -595,13 +625,14 @@ jar {
                 文件名与内置方块保持一致即可覆盖。例如：
             </p>
             <ul>
-                <li><b>grass.png</b> — 覆盖草方块</li>
-                <li><b>stone.png</b> — 覆盖石头</li>
+                <li><b>grass.png</b> / <b>grass_gradient.png</b> / <b>dirt.png</b> — 草方块的顶 / 侧 / 底</li>
+                <li><b>stone.png</b> — 石头</li>
+                <li><b>cobblestone.png</b> — 圆石</li>
+                <li><b>coal_ore.png</b> / <b>iron_ore.png</b> / <b>gold_ore.png</b> / <b>diamond_ore.png</b> — 矿石</li>
+                <li><b>sand.png</b> — 沙子</li>
+                <li><b>planks.png</b> / <b>log.png</b> / <b>leaves.png</b> — 木头系列</li>
             </ul>
-            <p>
-                尺寸建议 16×16，风格不限。启动游戏后控制台会打印：
-            </p>
-            <pre>[EdiPack] 资源包: BlueGrass - 我的资源包 - 把草方块改成蓝的</pre>
+            <p>尺寸建议 16×16，风格不限。</p>
         </div>
 
         <div class="tutorial">
@@ -622,7 +653,6 @@ jar {
     </div>
 </section>
 
-<!-- ========== 运行步骤 ========== -->
 <section id="howto">
     <h2 class="section-title">如何运行</h2>
     <p class="section-sub">从下载到进入游戏只需要三步。</p>
@@ -638,7 +668,7 @@ jar {
         <div class="step">
             <div class="step-num">2</div>
             <div>
-                <h4>下载 MinecraftEdi-0.19.jar</h4>
+                <h4>下载 MinecraftEdi-0.21.jar</h4>
                 <p>点击上方的下载按钮，把 jar 保存到任意目录。</p>
             </div>
         </div>
@@ -647,14 +677,13 @@ jar {
             <div>
                 <h4>运行</h4>
                 <p>双击 jar 即可启动；如果双击无效，在 jar 所在目录打开终端：</p>
-                <pre>java -jar MinecraftEdi-0.19.jar</pre>
-                <p>首次运行会在当前目录创建 <code>mods/</code> 和 <code>resourcepacks/</code> 两个文件夹。</p>
+                <pre>java -jar MinecraftEdi-0.21.jar</pre>
+                <p>首次运行会在当前目录创建 <code>mods/</code>、<code>resourcepacks/</code>、<code>saves/</code> 三个文件夹。</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ========== 操作说明 ========== -->
 <section class="full" id="controls">
     <div class="inner">
         <h2 class="section-title">操作</h2>
@@ -663,22 +692,21 @@ jar {
             <div class="key-row"><span class="key-cap">W A S D</span><span>前后左右移动</span></div>
             <div class="key-row"><span class="key-cap">鼠标</span><span>转动视角</span></div>
             <div class="key-row"><span class="key-cap">空格</span><span>跳跃</span></div>
-            <div class="key-row"><span class="key-cap">左键</span><span>破坏方块</span></div>
-            <div class="key-row"><span class="key-cap">右键</span><span>放置方块</span></div>
-            <div class="key-row"><span class="key-cap">1</span><span>切换到草方块</span></div>
-            <div class="key-row"><span class="key-cap">2</span><span>切换到石头</span></div>
-            <div class="key-row"><span class="key-cap">ESC</span><span>关闭窗口</span></div>
+            <div class="key-row"><span class="key-cap">左键</span><span>破坏方块（生存：掉落物进背包）</span></div>
+            <div class="key-row"><span class="key-cap">右键</span><span>放置方块（生存：扣快捷栏数量）</span></div>
+            <div class="key-row"><span class="key-cap">1~9</span><span>切换快捷栏</span></div>
+            <div class="key-row"><span class="key-cap">E</span><span>打开 / 关闭物品栏</span></div>
+            <div class="key-row"><span class="key-cap">ESC</span><span>保存并返回菜单</span></div>
         </div>
     </div>
 </section>
 
-<!-- ========== 页脚 ========== -->
 <footer>
     <div class="foot-brand">
         <img src="assets/icon.png" alt="">
         Minecraft<span>Edi</span>
     </div>
-    <div>版本 0.19 · Java + LWJGL · 开源复刻项目</div>
+    <div>版本 0.21 · Java + LWJGL · 开源复刻项目</div>
     <p>MinecraftEdi 与 Mojang / Microsoft 无关，仅供学习交流使用。</p>
 </footer>
 

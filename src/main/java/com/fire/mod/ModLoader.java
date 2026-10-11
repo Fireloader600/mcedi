@@ -1,6 +1,7 @@
 package com.fire.mod;
 
 import com.fire.block.BlockRegistry;
+import com.fire.world.WorldTag;
 
 import java.io.File;
 import java.io.InputStream;
@@ -12,33 +13,33 @@ import java.util.jar.JarFile;
 
 public class ModLoader {
 
-    public static void loadAll(BlockRegistry registry) {
+    public static void loadAll(BlockRegistry registry, WorldTag tag) {
         File modsDir = new File("mods");
         if (!modsDir.exists()) {
-            if (modsDir.mkdirs()) System.out.println("[EdiPack] 已创建 mods/ 文件夹");
+            modsDir.mkdirs();
             return;
         }
 
         File[] jars = modsDir.listFiles((d, n) -> n.toLowerCase().endsWith(".jar"));
         if (jars == null || jars.length == 0) {
-            System.out.println("[EdiPack] mods/ 为空，跳过加载");
+            //System.out.println("[EdiPack] mods/ 为空，跳过加载");
             return;
         }
 
         for (File jar : jars) {
             try {
-                loadJar(jar, registry);
+                loadJar(jar, registry, tag);
             } catch (Throwable t) {
-                System.err.println("[EdiPack] 加载失败: " + jar.getName() + " → " + t);
+                //System.err.println("[EdiPack] 加载失败: " + jar.getName() + " → " + t);
             }
         }
     }
 
-    private static void loadJar(File jar, BlockRegistry registry) throws Exception {
+    private static void loadJar(File jar, BlockRegistry registry, WorldTag tag) throws Exception {
         try (JarFile jf = new JarFile(jar)) {
             JarEntry meta = jf.getJarEntry("edimod.json");
             if (meta == null) {
-                System.out.println("[EdiPack] 跳过（无 edimod.json）: " + jar.getName());
+                //System.out.println("[EdiPack] 跳过（无 edimod.json）: " + jar.getName());
                 return;
             }
             String json;
@@ -46,8 +47,8 @@ public class ModLoader {
                 json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             }
 
-            String name = parseField(json, "name");
-            String version = parseField(json, "version");
+            String name      = parseField(json, "name");
+            String version   = parseField(json, "version");
             String mainClass = parseField(json, "main");
 
             if (mainClass == null || mainClass.isEmpty()) {
@@ -69,12 +70,14 @@ public class ModLoader {
             ClassLoader old = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(loader);
             try {
-                ((EdiMod) instance).onInit(registry);
+                EdiMod mod = (EdiMod) instance;
+                mod.onInit(registry);
+                mod.onWorldTag(tag);
             } finally {
                 Thread.currentThread().setContextClassLoader(old);
             }
 
-            System.out.println("[EdiPack] 已加载: " + name + " v" + version + " (" + jar.getName() + ")");
+            //System.out.println("[EdiPack] 已加载: " + name + " v" + version + " (" + jar.getName() + ")");
         }
     }
 
